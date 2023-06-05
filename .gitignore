@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+*.Rhistory
+
+*.png
+!hierarchical_BMC.png
+*.pdf
+
+notebooks/Graphics_Viz.ipynb
+
+# Tensorflow checkpoints
+ckpt* 
+
+# Folders
+data
+figures
