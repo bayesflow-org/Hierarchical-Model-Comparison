@@ -5,6 +5,8 @@ from scipy import stats
 
 import tensorflow as tf
 
+from .settings import DEFAULT_KEYS
+
 
 class HierarchicalNormalSimulator:
     
@@ -230,13 +232,31 @@ class HierarchicalSdtMptSimulator:
         X = self.generate_from_likelihood(p_h_m, p_f_m, n_clusters, n_obs)
 
         return X
+    
+    def generate_batch(self, batch_size, model_index, n_clusters, n_obs, n_vars, **kwargs):
+        """ Generates a batch of simulated data sets from a fixed model. """
+
+        X_gen = np.zeros((batch_size, n_clusters, n_obs, n_vars), dtype=np.float32)
+
+        for b in range(batch_size):
+            X_gen[b] = self.generate_single(model_index, n_clusters, n_obs)
+
+        out_dict = {
+            DEFAULT_KEYS["sim_data"]: X_gen,
+        }
+
+        return out_dict
 
 
 class MainSimulator:
     
-    def __init__(self, simulator):
+    def __init__(self, simulator, n_clusters, n_obs, n_vars, n_models):
         
         self.simulator = simulator
+        self.n_clusters = n_clusters
+        self.n_obs = n_obs
+        self.n_vars = n_vars
+        self.n_models = n_models
     
     def draw_from_model_prior(self, batch_size, n_models, model_prior):
         """
@@ -264,7 +284,7 @@ class MainSimulator:
         model_indices = np.random.choice(model_base_indices, size=batch_size, p=model_prior)
         return model_indices
     
-    def simulate(self, batch_size, n_obs, n_vars, n_models, model_prior):
+    def simulate(self, batch_size, n_clusters, n_obs, n_vars, n_models, model_prior):
         """
         Simulates a batch of hierarchical data sets.
         ----------
@@ -281,19 +301,17 @@ class MainSimulator:
         dict of {'X' : array of shape (batch_size, n_clusters, n_obs, n_variables),  
                  'm' : array of shape (batch_size)}
         """
-        # Draw K and N (drawn values apply for all data sets in the batch)
-        K, N = n_obs
         
         # Draw sampling list of model indices
         model_indices = self.draw_from_model_prior(batch_size, n_models, model_prior)
         
         # Prepare an array to hold simulations
-        X_gen = np.zeros((batch_size, K, N, n_vars), dtype=np.float32)
+        X_gen = np.zeros((batch_size, n_clusters, n_obs, n_vars), dtype=np.float32)
 
         for b in range(batch_size):
-            X_gen[b] = self.simulator.generate_single(model_indices[b], K, N)
+            X_gen[b] = self.simulator.generate_single(model_indices[b], n_clusters, n_obs)
                
         return to_categorical(model_indices), None, X_gen
     
-    def __call__(self, batch_size, n_obs, n_vars=1, n_models=2, model_prior=None):
-        return self.simulate(batch_size, n_obs, n_vars, n_models, model_prior)
+    def __call__(self, batch_size, model_prior=None):
+        return self.simulate(batch_size, self.n_clusters, self.n_obs, self.n_vars, self.n_models, model_prior)

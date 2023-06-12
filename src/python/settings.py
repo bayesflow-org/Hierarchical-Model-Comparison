@@ -87,3 +87,35 @@ plotting_settings = {
     'fontsize_title' : 16,
     'fontsize_legends' : 12
 }
+
+
+# BayesFlow default keys
+
+DEFAULT_KEYS = {
+    "prior_draws": "prior_draws",
+    "obs_data": "obs_data",
+    "sim_data": "sim_data",
+    "batchable_context": "batchable_context",
+    "non_batchable_context": "non_batchable_context",
+    "prior_batchable_context": "prior_batchable_context",
+    "prior_non_batchable_context": "prior_non_batchable_context",
+    "prior_context": "prior_context",
+    "hyper_prior_draws": "hyper_prior_draws",
+    "shared_prior_draws": "shared_prior_draws",
+    "local_prior_draws": "local_prior_draws",
+    "sim_batchable_context": "sim_batchable_context",
+    "sim_non_batchable_context": "sim_non_batchable_context",
+    "summary_conditions": "summary_conditions",
+    "direct_conditions": "direct_conditions",
+    "parameters": "parameters",
+    "hyper_parameters": "hyper_parameters",
+    "shared_parameters": "shared_parameters",
+    "local_parameters": "local_parameters",
+    "observables": "observables",
+    "targets": "targets",
+    "conditions": "conditions",
+    "posterior_inputs": "posterior_inputs",
+    "likelihood_inputs": "likelihood_inputs",
+    "model_outputs": "model_outputs",
+    "model_indices": "model_indices",
+}
