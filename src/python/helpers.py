@@ -165,7 +165,7 @@ def calibration_curve_with_ece(y_true, y_prob, pos_label=None, n_bins=15, strate
 
 
 # Get multiple predictions to plot with uncertainty.
-def get_repeated_predictions(probability_net, summary_net, simulator, n_models, n_data_sets=5000, n_repetitions=10):
+def get_repeated_predictions(probability_net, summary_net, trainer, simulator, n_models, n_data_sets=5000, n_repetitions=10):
     """ Gets repeated predictions from the trained hierarchical network via repeated simulation and prediction. 
     Recommended for online learning settings with fast data set simulation.
 
@@ -194,10 +194,10 @@ def get_repeated_predictions(probability_net, summary_net, simulator, n_models, 
     m_true = np.zeros((n_repetitions, n_data_sets, n_models))
 
     for i in range(n_repetitions):
-        m_val, _, x_val = simulator()
+        data = trainer.configurator(simulator(n_data_sets))
 
-        m_soft[i,:,:] = tf.concat([probability_net.predict(summary_net(x_chunk))['m_probs'] for x_chunk in tf.split(x_val, 20)], axis=0)
-        m_true[i,:,:] = m_val
+        m_soft[i,:,:] = np.concatenate([probability_net.posterior_probs(summary_net(x_chunk)) for x_chunk in tf.split(data['summary_conditions'], 20)])
+        m_true[i,:,:] = data['model_indices']
 
     return m_true, m_soft
 

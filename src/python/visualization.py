@@ -135,9 +135,9 @@ def perf_tester(probability_net, summary_net, val_data, n_bootstrap=100, n_cal_b
     """Helper function to test the performance of the model."""
     
     # Compute model predictions in chunks so GPU memory does not blow-up
-    m_soft = tf.concat([probability_net.predict(summary_net(x_chunk))['m_probs'][:, 1] for x_chunk in tf.split(val_data['X'], 20)], axis=0).numpy()
+    m_soft = np.concatenate([probability_net.posterior_probs(summary_net(x_chunk))[:, 1] for x_chunk in tf.split(val_data['summary_conditions'], 20)])
     m_hard = (m_soft > 0.5).astype(np.int32)
-    m_true = val_data['m'][:, 1]
+    m_true = val_data['model_indices'][:, 1]
     
     if pub_style == False:
         # Prepare figures
