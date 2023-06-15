@@ -100,6 +100,20 @@ class HierarchicalNormalSimulator:
             x_generated = self.gen_from_likelihood(prior_sample, n_obs)
             X.append(x_generated)
         return np.array(X)[...,np.newaxis]
+    
+    def generate_batch(self, batch_size, model_index, n_clusters, n_obs, n_vars=1, **kwargs):
+        """ Generates a batch of simulated data sets from a fixed model. """
+
+        X_gen = np.zeros((batch_size, n_clusters, n_obs, n_vars), dtype=np.float32)
+
+        for b in range(batch_size):
+            X_gen[b] = self.generate_single(model_index, n_clusters, n_obs)
+
+        out_dict = {
+            DEFAULT_KEYS["sim_data"]: X_gen,
+        }
+
+        return out_dict
 
 
 class HierarchicalSdtMptSimulator:
@@ -233,7 +247,7 @@ class HierarchicalSdtMptSimulator:
 
         return X
     
-    def generate_batch(self, batch_size, model_index, n_clusters, n_obs, n_vars, **kwargs):
+    def generate_batch(self, batch_size, model_index, n_clusters, n_obs, n_vars=2, **kwargs):
         """ Generates a batch of simulated data sets from a fixed model. """
 
         X_gen = np.zeros((batch_size, n_clusters, n_obs, n_vars), dtype=np.float32)
