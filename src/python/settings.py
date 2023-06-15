@@ -1,4 +1,9 @@
-# Network settings for validation experiments
+# Network settings
+
+sum_config = {"units": 128, "activation": "relu", "kernel_initializer": "glorot_uniform"}
+
+
+# DEPRECATED: Network settings for validation experiments
 summary_meta_validation = {
     'level_1': {
         'inv_inner': {

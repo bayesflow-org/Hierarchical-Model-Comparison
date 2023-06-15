@@ -315,6 +315,7 @@ def get_preds_and_bfs(probability_net, summary_net, data, training_time_start, t
     """ 
     Writes model predictions and resulting Bayes Factors for a given 
     array of datasets into a pandas DataFrame. 
+    final_epoch_loss assumes that each epoch contains 1000 training steps.
     """
 
     n_datasets = data['X'].shape[0]
@@ -323,7 +324,7 @@ def get_preds_and_bfs(probability_net, summary_net, data, training_time_start, t
 
     # Predict
     inference_time_start = perf_counter()
-    m1_prob = np.array(probability_net.predict(summary_net(data['X']))['m_probs'][:, 1], dtype = np.longdouble)
+    m1_prob = np.array(probability_net.posterior_probs(summary_net(data['X']))[:, 1], dtype = np.longdouble)
     inference_time_stop = perf_counter()
     m0_prob = 1 - m1_prob
     selected_model = (m1_prob > 0.5)
@@ -336,7 +337,7 @@ def get_preds_and_bfs(probability_net, summary_net, data, training_time_start, t
     inference_time = np.repeat(((inference_time_stop-inference_time_start)/n_datasets), n_datasets)
     
     # Final epoch mean loss
-    final_epoch_loss = np.repeat(np.mean(losses[10]), n_datasets)
+    final_epoch_loss = np.repeat(np.mean(losses[-1000:]), n_datasets)
 
     # Create DataFrame
     vals = np.c_[dataset, true_model, m0_prob, m1_prob, selected_model, bayes_factor,
