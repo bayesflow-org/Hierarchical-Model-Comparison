@@ -12,7 +12,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics._base import _check_pos_label_consistency
 
 
-# Calibration: Hacks for BayesFlow compatibility. 
+# Calibration: Hacks for BayesFlow compatibility.
+
 
 # fixed data set sizes
 def n_clust_obs_f_f(n_clusters=50, n_obs=50):
@@ -20,7 +21,7 @@ def n_clust_obs_f_f(n_clusters=50, n_obs=50):
     Nasty hack to make compatible with BayesFlow.
     Defines a fixed number of clusters and observations.
     """
-    
+
     K = n_clusters
     N = n_obs
     return (K, N)
@@ -32,7 +33,7 @@ def n_clust_obs_f_v(n_obs_min, n_obs_max, n_clusters=50):
     Nasty hack to make compatible with BayesFlow.
     Defines a fixed number of clusters and a variable number of observations.
     """
-    
+
     K = n_clusters
     N = np.random.randint(n_obs_min, n_obs_max)
     return (K, N)
@@ -44,10 +45,11 @@ def n_clust_obs_f_v_val(n_obs, n_clusters=50):
     Nasty hack to make compatible with BayesFlow.
     Defines a fixed number of clusters and a number of observations that is iterated through.
     """
-    
+
     K = n_clusters
     N = n_obs
     return (K, N)
+
 
 # variable data set sizes
 def n_clust_obs_v_v(n_clust_min, n_clust_max, n_obs_min, n_obs_max):
@@ -55,7 +57,7 @@ def n_clust_obs_v_v(n_clust_min, n_clust_max, n_obs_min, n_obs_max):
     Nasty hack to make compatible with BayesFlow.
     Defines a variable number of clusters and observations.
     """
-    
+
     K = np.random.randint(n_clust_min, n_clust_max)
     N = np.random.randint(n_obs_min, n_obs_max)
     return (K, N)
@@ -63,16 +65,19 @@ def n_clust_obs_v_v(n_clust_min, n_clust_max, n_obs_min, n_obs_max):
 
 # Calibration
 
-# Get calibration curve and ECE 
-def calibration_curve_with_ece(y_true, y_prob, pos_label=None, n_bins=15, strategy="uniform"):
+
+# Get calibration curve and ECE
+def calibration_curve_with_ece(
+    y_true, y_prob, pos_label=None, n_bins=15, strategy="uniform"
+):
     """
-    [sklearn.calibration.calibration_curve source code supplemented with an ECE calculation 
+    [sklearn.calibration.calibration_curve source code supplemented with an ECE calculation
      proposed by chrisyeh96 in issue #18268 of the scikit-learn github repository.]
     Compute true and predicted probabilities for a calibration curve.
     The method assumes the inputs come from a binary classifier, and
     discretize the [0, 1] interval into bins.
     Calibration curves may also be referred to as reliability diagrams.
-    Computes ECE according to Naeini et al. (2015) with prob_true 
+    Computes ECE according to Naeini et al. (2015) with prob_true
     and NOT according to Guo et al. (2017) which use accuracy instead.
 
     Parameters
@@ -153,7 +158,7 @@ def calibration_curve_with_ece(y_true, y_prob, pos_label=None, n_bins=15, strate
     bin_sums = np.bincount(binids, weights=y_prob, minlength=len(bins))
     bin_true = np.bincount(binids, weights=y_true, minlength=len(bins))
     bin_total = np.bincount(binids, minlength=len(bins))
-    
+
     nonzero = bin_total != 0
     prob_true = bin_true[nonzero] / bin_total[nonzero]
     prob_pred = bin_sums[nonzero] / bin_total[nonzero]
@@ -165,8 +170,16 @@ def calibration_curve_with_ece(y_true, y_prob, pos_label=None, n_bins=15, strate
 
 
 # Get multiple predictions to plot with uncertainty.
-def get_repeated_predictions(probability_net, summary_net, trainer, simulator, n_models, n_data_sets=5000, n_repetitions=10):
-    """ Gets repeated predictions from the trained hierarchical network via repeated simulation and prediction. 
+def get_repeated_predictions(
+    probability_net,
+    summary_net,
+    trainer,
+    simulator,
+    n_models,
+    n_data_sets=5000,
+    n_repetitions=10,
+):
+    """Gets repeated predictions from the trained hierarchical network via repeated simulation and prediction.
     Recommended for online learning settings with fast data set simulation.
 
     Parameters
@@ -176,7 +189,7 @@ def get_repeated_predictions(probability_net, summary_net, trainer, simulator, n
     summary_net : HierarchicalInvariantNetwork
         Trained summary network.
     simulator : MainSimulator
-        A generative model 
+        A generative model
     n_models : int
         Number of compared models
     n_data_sets : int
@@ -196,14 +209,26 @@ def get_repeated_predictions(probability_net, summary_net, trainer, simulator, n
     for i in range(n_repetitions):
         data = trainer.configurator(simulator(n_data_sets))
 
-        m_soft[i,:,:] = np.concatenate([probability_net.posterior_probs(summary_net(x_chunk)) for x_chunk in tf.split(data['summary_conditions'], 20)])
-        m_true[i,:,:] = data['model_indices']
+        m_soft[i, :, :] = np.concatenate(
+            [
+                probability_net.posterior_probs(summary_net(x_chunk))
+                for x_chunk in tf.split(data["summary_conditions"], 20)
+            ]
+        )
+        m_true[i, :, :] = data["model_indices"]
 
     return m_true, m_soft
 
 
-def get_bootstrapped_predictions(probability_net, summary_net, simulated_data, simulated_indices, n_models, n_bootstrap=100):
-    """ Gets bootstrapped predictions from the trained hierarchical network via bootstrapping of the given batch of data sets. 
+def get_bootstrapped_predictions(
+    probability_net,
+    summary_net,
+    simulated_data,
+    simulated_indices,
+    n_models,
+    n_bootstrap=100,
+):
+    """Gets bootstrapped predictions from the trained hierarchical network via bootstrapping of the given batch of data sets.
     Recommended for offline learning settings or online learning settings with slow data set simulation.
 
     Parameters
@@ -213,7 +238,7 @@ def get_bootstrapped_predictions(probability_net, summary_net, simulated_data, s
     summary_net : HierarchicalInvariantNetwork
         Trained summary network.
     simulated_data : np.array
-        A batch of simulated data sets 
+        A batch of simulated data sets
     simulated_indices : np.array
         A batch of simulated indices marking which model each data set in simulated_data was generated from.
     n_models : int
@@ -234,57 +259,92 @@ def get_bootstrapped_predictions(probability_net, summary_net, simulated_data, s
 
     for i in range(n_bootstrap):
         b_idx = np.random.choice(np.arange(n_data_sets), size=n_data_sets, replace=True)
-        m_soft[i,:,:] = tf.concat([probability_net.predict(summary_net(x_chunk))['m_probs'] for x_chunk in tf.split(simulated_data[b_idx], 20)], axis=0)
-        m_true[i,:,:] = simulated_indices[b_idx]
+        m_soft[i, :, :] = tf.concat(
+            [
+                probability_net.predict(summary_net(x_chunk))["m_probs"]
+                for x_chunk in tf.split(simulated_data[b_idx], 20)
+            ],
+            axis=0,
+        )
+        m_true[i, :, :] = simulated_indices[b_idx]
 
     return m_true, m_soft
 
 
 # Calibration: Plotting for training with variable numbers of clusters and variable number of observations
-def compute_eces_variable(probability_net, summary_net, simulator, n_val_per_setting, n_clust_min, n_clust_max, 
-                          n_obs_min, n_obs_max, n_cal_bins=15, add_accuracy_sbc=False):
+def compute_eces_variable(
+    probability_net,
+    summary_net,
+    simulator,
+    n_val_per_setting,
+    n_clust_min,
+    n_clust_max,
+    n_obs_min,
+    n_obs_max,
+    n_cal_bins=15,
+    add_accuracy_sbc=False,
+):
     """
     Simulates validation data per setting and computes the expected calibration error of the model.
     --------
 
     Returns:
-    2 lists of shape((n_clust_max+1 - n_clust_min)*(n_obs_max+1 - n_obs_min)) 
+    2 lists of shape((n_clust_max+1 - n_clust_min)*(n_obs_max+1 - n_obs_min))
     - containing the mean (1st list) / sd (2nd list) eces of all possible combinations on L and N.
     """
-    
+
     def n_clust_obs_f_v_val(l, n):
         """
         Nasty hack to make compatible with BayesFlow.
         Defines a fixed number of clusters and a number of observations that is iterated through.
         """
-        
+
         K = l
         N = n
         return (K, N)
-    
+
     # Create lists
     eces = []
     if add_accuracy_sbc:
         accuracies = []
         sbcs = []
-    
-    with tqdm(total=(n_clust_max+1 - n_clust_min), desc='Loop through clusters progress') as p_bar: 
-        with tqdm(total=(n_obs_max+1 - n_obs_min), desc='Loop through nested observations progress') as p_bar_within:
-            for l in range(n_clust_min, n_clust_max+1): # Loop through clusters
-                
-                p_bar_within.reset((n_obs_max+1 - n_obs_min)) # reuse 2nd bar so that screen doesn't explode
-                for n in range(n_obs_min, n_obs_max+1): # Loop through nested observations
 
+    with tqdm(
+        total=(n_clust_max + 1 - n_clust_min), desc="Loop through clusters progress"
+    ) as p_bar:
+        with tqdm(
+            total=(n_obs_max + 1 - n_obs_min),
+            desc="Loop through nested observations progress",
+        ) as p_bar_within:
+            for l in range(n_clust_min, n_clust_max + 1):  # Loop through clusters
+                p_bar_within.reset(
+                    (n_obs_max + 1 - n_obs_min)
+                )  # reuse 2nd bar so that screen doesn't explode
+                for n in range(
+                    n_obs_min, n_obs_max + 1
+                ):  # Loop through nested observations
                     # Simulate validation data
-                    m_val_sim, _, x_val_sim = simulator(n_val_per_setting, n_clust_obs_f_v_val(l, n))
+                    m_val_sim, _, x_val_sim = simulator(
+                        n_val_per_setting, n_clust_obs_f_v_val(l, n)
+                    )
 
                     # Predict model probabilities
-                    m_soft = tf.concat([probability_net.predict(summary_net(x_chunk))['m_probs'][:, 1] for x_chunk in tf.split(x_val_sim, 20)], axis=0).numpy()      
+                    m_soft = tf.concat(
+                        [
+                            probability_net.predict(summary_net(x_chunk))["m_probs"][
+                                :, 1
+                            ]
+                            for x_chunk in tf.split(x_val_sim, 20)
+                        ],
+                        axis=0,
+                    ).numpy()
                     m_hard = (m_soft > 0.5).astype(np.int32)
-                    m_true = m_val_sim[:, 1]  
+                    m_true = m_val_sim[:, 1]
 
                     # Compute calibration error
-                    prob_true, prob_pred, ece = calibration_curve_with_ece(m_true, m_soft, n_bins=n_cal_bins)
+                    prob_true, prob_pred, ece = calibration_curve_with_ece(
+                        m_true, m_soft, n_bins=n_cal_bins
+                    )
                     eces.append(ece)
 
                     if add_accuracy_sbc:
@@ -295,14 +355,16 @@ def compute_eces_variable(probability_net, summary_net, simulator, n_val_per_set
                         sbcs.append(sbc)
 
                     # Update inner progress bar
-                    p_bar_within.set_postfix_str("Cluster {0}, Observation {1}".format(l, n + 1))
+                    p_bar_within.set_postfix_str(
+                        "Cluster {0}, Observation {1}".format(l, n + 1)
+                    )
                     p_bar_within.update()
 
                 # Refresh inner + update outer progress bar
-                p_bar_within.refresh() 
+                p_bar_within.refresh()
                 p_bar.set_postfix_str("Finished clusters: {}".format(l))
                 p_bar.update()
-    
+
     if add_accuracy_sbc:
         return eces, accuracies, sbcs
 
@@ -311,61 +373,91 @@ def compute_eces_variable(probability_net, summary_net, simulator, n_val_per_set
 
 # Bridge sampling comparison: data transformations
 
-def get_preds_and_bfs(probability_net, summary_net, data, training_time_start, training_time_stop, losses):
-    """ 
-    Writes model predictions and resulting Bayes Factors for a given 
-    array of datasets into a pandas DataFrame. 
+
+def get_preds_and_bfs(
+    probability_net, summary_net, data, training_time_start, training_time_stop, losses
+):
+    """
+    Writes model predictions and resulting Bayes Factors for a given
+    array of datasets into a pandas DataFrame.
     final_epoch_loss assumes that each epoch contains 1000 training steps.
     """
 
-    n_datasets = data['X'].shape[0]
-    dataset = np.arange(1,n_datasets+1)
-    true_model = data['m'][:,1]
+    n_datasets = data["X"].shape[0]
+    dataset = np.arange(1, n_datasets + 1)
+    true_model = data["m"][:, 1]
 
     # Predict
     inference_time_start = perf_counter()
-    m1_prob = np.array(probability_net.posterior_probs(summary_net(data['X']))[:, 1], dtype = np.longdouble)
+    m1_prob = np.array(
+        probability_net.posterior_probs(summary_net(data["X"]))[:, 1],
+        dtype=np.longdouble,
+    )
     inference_time_stop = perf_counter()
     m0_prob = 1 - m1_prob
-    selected_model = (m1_prob > 0.5)
+    selected_model = m1_prob > 0.5
 
     # Bayes Factors
     bayes_factor = m1_prob / m0_prob
-    
+
     # Times
-    training_time = np.repeat((training_time_stop-training_time_start), n_datasets)
-    inference_time = np.repeat(((inference_time_stop-inference_time_start)/n_datasets), n_datasets)
-    
+    training_time = np.repeat((training_time_stop - training_time_start), n_datasets)
+    inference_time = np.repeat(
+        ((inference_time_stop - inference_time_start) / n_datasets), n_datasets
+    )
+
     # Final epoch mean loss
     final_epoch_loss = np.repeat(np.mean(losses[-1000:]), n_datasets)
 
     # Create DataFrame
-    vals = np.c_[dataset, true_model, m0_prob, m1_prob, selected_model, bayes_factor,
-                 training_time, inference_time, final_epoch_loss]
-    names = ['dataset', 'true_model', 'm0_prob', 'm1_prob', 'selected_model', 'bayes_factor',
-             'training_time', 'inference_time', 'final_epoch_loss']
-    df = pd.DataFrame(vals, columns = names)
-    df[["dataset", "true_model", "selected_model"]] = df[["dataset", "true_model", "selected_model"]].astype(int)
-    
+    vals = np.c_[
+        dataset,
+        true_model,
+        m0_prob,
+        m1_prob,
+        selected_model,
+        bayes_factor,
+        training_time,
+        inference_time,
+        final_epoch_loss,
+    ]
+    names = [
+        "dataset",
+        "true_model",
+        "m0_prob",
+        "m1_prob",
+        "selected_model",
+        "bayes_factor",
+        "training_time",
+        "inference_time",
+        "final_epoch_loss",
+    ]
+    df = pd.DataFrame(vals, columns=names)
+    df[["dataset", "true_model", "selected_model"]] = df[
+        ["dataset", "true_model", "selected_model"]
+    ].astype(int)
+
     return df
 
 
 def log_with_inf_noise_addition(x):
-    """ 
-    Adjusts the model probabilities leading to Inf values by a minimal amount of noise, 
-    recomputes the Bayes factors and then computes the log of the given array. 
     """
-    
+    Adjusts the model probabilities leading to Inf values by a minimal amount of noise,
+    recomputes the Bayes factors and then computes the log of the given array.
+    """
+
     noise = 0.000000001
 
     x_copy = x.copy()
     for i in range(x.shape[0]):
-        if x.loc[i,'m0_prob'] == 0:
-            print('Dataset with infinite BF: {}'.format(i))
-            x_copy.loc[i,'m0_prob'] = x_copy.loc[i,'m0_prob'] + noise
-            x_copy.loc[i,'m1_prob'] = x_copy.loc[i,'m1_prob'] - noise
-            x_copy.loc[i,'bayes_factor'] = x_copy.loc[i,'m1_prob'] / x_copy.loc[i,'m0_prob']
-    x_copy = np.log(x_copy['bayes_factor'])
+        if x.loc[i, "m0_prob"] == 0:
+            print("Dataset with infinite BF: {}".format(i))
+            x_copy.loc[i, "m0_prob"] = x_copy.loc[i, "m0_prob"] + noise
+            x_copy.loc[i, "m1_prob"] = x_copy.loc[i, "m1_prob"] - noise
+            x_copy.loc[i, "bayes_factor"] = (
+                x_copy.loc[i, "m1_prob"] / x_copy.loc[i, "m0_prob"]
+            )
+    x_copy = np.log(x_copy["bayes_factor"])
     return x_copy
 
 
@@ -382,23 +474,26 @@ def computation_times(results_list):
 
     # Calculate computation times
     results_time_list = []
-    bridge_time = (results_list[0]['compile_time'] + 
-                        (results_list[0]['stan_time'] + results_list[0]['bridge_time']).cumsum()
-                        )/60
+    bridge_time = (
+        results_list[0]["compile_time"]
+        + (results_list[0]["stan_time"] + results_list[0]["bridge_time"]).cumsum()
+    ) / 60
     results_time_list.append(bridge_time)
 
     for NN_result in results_list[1:]:
-        results_time_list.append((NN_result['training_time'] + NN_result['inference_time'].cumsum())/60)
+        results_time_list.append(
+            (NN_result["training_time"] + NN_result["inference_time"].cumsum()) / 60
+        )
 
     # Adjust index to represent datasets
     for i, result in enumerate(results_time_list):
-        results_time_list[i].index += 1 
+        results_time_list[i].index += 1
 
     return results_time_list
 
 
-
 # Levy flight application: Load and transform data
+
 
 def load_simulated_rt_data(folder, indices_filename, datasets_filename):
     """Loads and transforms simulated reaction time data.
@@ -415,7 +510,7 @@ def load_simulated_rt_data(folder, indices_filename, datasets_filename):
     datasets = np.load(os.path.join(folder, datasets_filename))
 
     # unpack indices
-    indices = indices[:,0,0,0]-1
+    indices = indices[:, 0, 0, 0] - 1
 
     # one-hot encode indices
     indices = to_categorical(indices, num_classes=4)
@@ -425,36 +520,44 @@ def load_simulated_rt_data(folder, indices_filename, datasets_filename):
 
 def load_empirical_rt_data(load_dir):
     """
-    Reads single subject datasets from a folder and transforms into list of 4D-arrays 
+    Reads single subject datasets from a folder and transforms into list of 4D-arrays
     which allows for a variable number of observations between participants.
     Assumes data files have a three-column csv format (Condition, Response, Response Time).
     ----------
-    
+
     Arguments:
     load_dir : str -- a string indicating the directory from which to load the data
     --------
-        
+
     Returns:
-    X: list of length (n_clusters), containing tf.Tensors of shape (1, 1, n_obs, 3) 
+    X: list of length (n_clusters), containing tf.Tensors of shape (1, 1, n_obs, 3)
         -- variable order now (Condition, Response Time, Response)
     """
-    
+
     data_files = os.listdir(load_dir)
     X = []
-    
+
     # Loop through data files and estimate
     for data_file in data_files:
-        
         ### Read in and transform data
-        data = pd.read_csv(os.path.join(load_dir, data_file), header=None, sep=' ')
-        data = data[[0,2,1]].values # reorder columns
-        X_file = tf.convert_to_tensor(data, dtype=tf.float32)[np.newaxis][np.newaxis] # get 4D tensor
+        data = pd.read_csv(os.path.join(load_dir, data_file), header=None, sep=" ")
+        data = data[[0, 2, 1]].values  # reorder columns
+        X_file = tf.convert_to_tensor(data, dtype=tf.float32)[np.newaxis][
+            np.newaxis
+        ]  # get 4D tensor
         X.append(X_file)
-      
+
     return X
 
 
-def mask_inputs(data_sets, missings_mean, missings_sd, missing_value=-1, missing_rts_equal_mean=True, insert_additional_missings=False):
+def mask_inputs(
+    data_sets,
+    missings_mean,
+    missings_sd,
+    missing_value=-1,
+    missing_rts_equal_mean=True,
+    insert_additional_missings=False,
+):
     """Masks some training inputs so that training leads to a robust net that can handle missing data
 
     Parameters
@@ -482,27 +585,44 @@ def mask_inputs(data_sets, missings_mean, missings_sd, missing_value=-1, missing
     n_trials = data_sets.shape[2]
 
     # create truncated normal parameterization in accordance with scipy documentation
-    a, b = (0 - missings_mean) / missings_sd, (n_trials - missings_mean) / missings_sd 
+    a, b = (0 - missings_mean) / missings_sd, (n_trials - missings_mean) / missings_sd
 
     for d in range(n_data_sets):
         # draw number of masked values per person from truncated normal distribution
-        masks_per_person = truncnorm.rvs(a, b, loc=missings_mean, scale=missings_sd, size=n_persons).round().astype(int)
-        # assign the specific trials to be masked within a person 
-        mask_positions = [np.random.randint(0, n_trials, size=(n_persons, j)) for j in masks_per_person][0]
+        masks_per_person = (
+            truncnorm.rvs(a, b, loc=missings_mean, scale=missings_sd, size=n_persons)
+            .round()
+            .astype(int)
+        )
+        # assign the specific trials to be masked within a person
+        mask_positions = [
+            np.random.randint(0, n_trials, size=(n_persons, j))
+            for j in masks_per_person
+        ][0]
         for j in range(n_persons):
-            data_sets[d,j,:,1:3][mask_positions[j]] = missing_value
+            data_sets[d, j, :, 1:3][mask_positions[j]] = missing_value
             if missing_rts_equal_mean:
-                data_sets[d,j,:,1][mask_positions[j]] = np.mean(data_sets[d,j,:,1])
+                data_sets[d, j, :, 1][mask_positions[j]] = np.mean(
+                    data_sets[d, j, :, 1]
+                )
 
     # assert that the average amount of masks per person matches the location of the truncnormal dist
     if insert_additional_missings == False:
-        deviation = abs((data_sets[:,:,:,:] == missing_value).sum()/(n_data_sets*n_persons*(2-missing_rts_equal_mean)) - missings_mean)
-        assert deviation < 3, f"Average amount of masks per person deviates by {deviation} from missings_mean!"
+        deviation = abs(
+            (data_sets[:, :, :, :] == missing_value).sum()
+            / (n_data_sets * n_persons * (2 - missing_rts_equal_mean))
+            - missings_mean
+        )
+        assert (
+            deviation < 3
+        ), f"Average amount of masks per person deviates by {deviation} from missings_mean!"
 
     return data_sets
 
 
-def join_and_fill_missings(color_data, lexical_data, n_trials, missings_value=-1, missing_rts_equal_mean=True):
+def join_and_fill_missings(
+    color_data, lexical_data, n_trials, missings_value=-1, missing_rts_equal_mean=True
+):
     """Joins data from color discrimination and lexical decision task per person and fills missings
 
     Parameters
@@ -521,7 +641,7 @@ def join_and_fill_missings(color_data, lexical_data, n_trials, missings_value=-1
     """
 
     n_clusters = len(color_data)
-    n_trials_per_cond = int(n_trials/2)
+    n_trials_per_cond = int(n_trials / 2)
     empirical_data = []
 
     for j in range(n_clusters):
@@ -529,37 +649,56 @@ def join_and_fill_missings(color_data, lexical_data, n_trials, missings_value=-1
         joint_data = tf.concat([color_data[j], lexical_data[j]], axis=2).numpy()
         # Extract information about trial
         n_trials_obs = joint_data.shape[2]
-        n_missings = n_trials-n_trials_obs
-        n_condition_1 = int(joint_data[0,0,:,0].sum())
-        mean_rt = np.mean(joint_data[0,0,:,1])
+        n_missings = n_trials - n_trials_obs
+        n_condition_1 = int(joint_data[0, 0, :, 0].sum())
+        mean_rt = np.mean(joint_data[0, 0, :, 1])
         # replace all missings with missings_value
-        npad = ((0,0), (0,0), (0,n_missings), (0,0))
-        joint_data = np.pad(joint_data, npad, 'constant', constant_values=missings_value)
+        npad = ((0, 0), (0, 0), (0, n_missings), (0, 0))
+        joint_data = np.pad(
+            joint_data, npad, "constant", constant_values=missings_value
+        )
         # replace missing condition indices
-        cond_indices = np.array([0] * (n_trials_per_cond-(n_trials_obs-n_condition_1)) + [1] * (n_trials_per_cond-n_condition_1))
+        cond_indices = np.array(
+            [0] * (n_trials_per_cond - (n_trials_obs - n_condition_1))
+            + [1] * (n_trials_per_cond - n_condition_1)
+        )
         np.random.shuffle(cond_indices)
-        joint_data[0,0,-(n_missings):,0] = cond_indices
+        joint_data[0, 0, -(n_missings):, 0] = cond_indices
         # replace missing rts with mean rt
         if missing_rts_equal_mean:
-            joint_data[0,0,:,1] = np.select([joint_data[0,0,:,1] == missings_value], [mean_rt], joint_data[0,0,:,1])
+            joint_data[0, 0, :, 1] = np.select(
+                [joint_data[0, 0, :, 1] == missings_value],
+                [mean_rt],
+                joint_data[0, 0, :, 1],
+            )
         # Append
         empirical_data.append(joint_data)
-    
-    
+
     # Transform to np.array
-    empirical_data = np.reshape(np.asarray(empirical_data), (1,n_clusters,n_trials,3))
+    empirical_data = np.reshape(
+        np.asarray(empirical_data), (1, n_clusters, n_trials, 3)
+    )
 
     # Assert that the number of coded missings equals the real number of missings
-    deviation = abs(((empirical_data == missings_value).sum()/(n_clusters*(2-missing_rts_equal_mean)))-28.5)
-    assert deviation < 1, 'number of filled and existing missings does not match' 
+    deviation = abs(
+        (
+            (empirical_data == missings_value).sum()
+            / (n_clusters * (2 - missing_rts_equal_mean))
+        )
+        - 28.5
+    )
+    assert deviation < 1, "number of filled and existing missings does not match"
 
     return empirical_data
 
 
 # Lévy flight application: Robustness against additional noise
 
-def mean_predictions_noisy_data(empirical_data, probability_net, summary_net, missings_mean, n_runs):
-    """ Get mean predictions for repeatedly applying the network to nested data with a proportion randomly masked as missing.
+
+def mean_predictions_noisy_data(
+    empirical_data, probability_net, summary_net, missings_mean, n_runs
+):
+    """Get mean predictions for repeatedly applying the network to nested data with a proportion randomly masked as missing.
         Variation of missing value between persons is held minimal via a low missings_sd parameter inside the runs loop.
 
     Parameters
@@ -575,7 +714,7 @@ def mean_predictions_noisy_data(empirical_data, probability_net, summary_net, mi
         (Can overlap with existing missings, resulting in less additional missing trials than stated)
     n_runs : int
         Number of runs to average over.
-        
+
 
     Returns
     -------
@@ -596,21 +735,29 @@ def mean_predictions_noisy_data(empirical_data, probability_net, summary_net, mi
     n_obs = empirical_data.shape[2]
 
     for r in range(n_runs):
-        noisy_data = mask_inputs(empirical_data, missings_mean=missings_mean, missings_sd=0.0001, missing_rts_equal_mean=True, insert_additional_missings=True)
-        noise_proportion_run = (noisy_data == -1).sum()/(n_clusters*n_obs)
+        noisy_data = mask_inputs(
+            empirical_data,
+            missings_mean=missings_mean,
+            missings_sd=0.0001,
+            missing_rts_equal_mean=True,
+            insert_additional_missings=True,
+        )
+        noise_proportion_run = (noisy_data == -1).sum() / (n_clusters * n_obs)
         noise_proportion.append(noise_proportion_run)
         preds = probability_net.predict(summary_net(noisy_data))
-        probs.append(preds['m_probs'])
-    
+        probs.append(preds["m_probs"])
+
     mean_noise_proportion = np.mean(noise_proportion)
     mean_probs = np.mean(probs, axis=0)
     mean_probs_sds = np.std(probs, axis=0)
-    
+
     return mean_noise_proportion, mean_probs, mean_probs_sds
 
 
-def inspect_robustness_noise(added_noise_percentages, empirical_data, probability_net, summary_net, n_runs):
-    """ Utility function to inspect the robustness of the network to artificially added noise.
+def inspect_robustness_noise(
+    added_noise_percentages, empirical_data, probability_net, summary_net, n_runs
+):
+    """Utility function to inspect the robustness of the network to artificially added noise.
 
     Parameters
     ----------
@@ -628,27 +775,32 @@ def inspect_robustness_noise(added_noise_percentages, empirical_data, probabilit
     Returns
     -------
     mean_noise_proportion_list : list
-        Mean noise proportions in the data sets for each noise step. 
+        Mean noise proportions in the data sets for each noise step.
         Can deviate from added_noise_percentages as added noise can overlap with existing missings.
     mean_probs : np.array
         Mean predictions output by the model probability network for each noise step.
     mean_sds : np.array
         Standard deviations of the mean predictions over the runs for each noise step.
     """
-    
+
     mean_noise_proportion_list = []
     means_probs_list = []
     means_probs_sds_list = []
 
     for noise in added_noise_percentages:
-        missings_mean = 900*noise
-        mean_noise_proportion, mean_probs, mean_probs_sds = mean_predictions_noisy_data(empirical_data, probability_net, summary_net, 
-                                                                                                   missings_mean=missings_mean, n_runs=n_runs)
+        missings_mean = 900 * noise
+        mean_noise_proportion, mean_probs, mean_probs_sds = mean_predictions_noisy_data(
+            empirical_data,
+            probability_net,
+            summary_net,
+            missings_mean=missings_mean,
+            n_runs=n_runs,
+        )
         mean_noise_proportion_list.append(mean_noise_proportion)
         means_probs_list.append(mean_probs)
         means_probs_sds_list.append(mean_probs_sds)
 
-    mean_probs= np.squeeze(means_probs_list)
+    mean_probs = np.squeeze(means_probs_list)
     mean_sds = np.squeeze(means_probs_sds_list)
 
     return mean_noise_proportion_list, mean_probs, mean_sds
@@ -656,8 +808,11 @@ def inspect_robustness_noise(added_noise_percentages, empirical_data, probabilit
 
 # Lévy flight application: Robustness against bootstrapping
 
-def inspect_robustness_bootstrap(empirical_data, probability_net, summary_net, level, n_bootstrap=100):
-    """ Utility function to inspect the robustness of the network to bootstrapping.
+
+def inspect_robustness_bootstrap(
+    empirical_data, probability_net, summary_net, level, n_bootstrap=100
+):
+    """Utility function to inspect the robustness of the network to bootstrapping.
 
     Parameters
     ----------
@@ -678,31 +833,34 @@ def inspect_robustness_bootstrap(empirical_data, probability_net, summary_net, l
         Predictions on the bootstrapped data sets output by the model probability network.
     """
 
-    if level == 'participants':
+    if level == "participants":
         n = empirical_data.shape[1]
-    elif level == 'trials':
+    elif level == "trials":
         n = empirical_data.shape[2]
 
     bootstrapped_probs = []
 
     for b in range(n_bootstrap):
         b_idx = np.random.choice(np.arange(n), size=n, replace=True)
-        if level == 'participants':
-            bootstrapped_data = empirical_data[:,b_idx,:,:]
-        elif level == 'trials':
-            bootstrapped_data = empirical_data[:,:,b_idx,:]
-        probs = probability_net.predict(summary_net(bootstrapped_data))['m_probs']
+        if level == "participants":
+            bootstrapped_data = empirical_data[:, b_idx, :, :]
+        elif level == "trials":
+            bootstrapped_data = empirical_data[:, :, b_idx, :]
+        probs = probability_net.predict(summary_net(bootstrapped_data))["m_probs"]
         bootstrapped_probs.append(probs)
 
-    bootstrapped_probs = np.asarray(bootstrapped_probs)[:,0,:]
+    bootstrapped_probs = np.asarray(bootstrapped_probs)[:, 0, :]
 
     return bootstrapped_probs
 
 
 # Lévy flight application: Robustness against leaving single participants out (LOPO)
 
-def inspect_robustness_lopo(empirical_data, probability_net, summary_net, print_probs=False):
-    """ Utility function to inspect the robustness of the network to leaving single participants out (LOPO).
+
+def inspect_robustness_lopo(
+    empirical_data, probability_net, summary_net, print_probs=False
+):
+    """Utility function to inspect the robustness of the network to leaving single participants out (LOPO).
 
     Parameters
     ----------
@@ -727,11 +885,11 @@ def inspect_robustness_lopo(empirical_data, probability_net, summary_net, print_
 
     for b in range(n_participants):
         cropped_data = np.delete(empirical_data, b, axis=1)
-        probs = probability_net.predict(summary_net(cropped_data))['m_probs']
+        probs = probability_net.predict(summary_net(cropped_data))["m_probs"]
         lopo_probs.append(probs)
         if print_probs:
-            print_probs(f'Participant = {b+1} / Predictions  = {probs}')
+            print_probs(f"Participant = {b+1} / Predictions  = {probs}")
 
-    lopo_probs = np.asarray(lopo_probs)[:,0,:]
+    lopo_probs = np.asarray(lopo_probs)[:, 0, :]
 
     return lopo_probs

@@ -1,12 +1,29 @@
 # Deep Hierarchical Model Comparison
 
 
+<img src="img/hierarchical_BMC.png" width=80% height=80%>
 
-This repository contains code for reproducing all results reported in the paper "A Deep Learning Method for Comparing Bayesian Hierarchical Models" by Lasse Elsemüller, Martin Schnuerch, Paul-Christian Bürkner and Stefan T. Radev (https://arxiv.org/abs/2301.11873).
+This repository contains the code for running the experiments and reproducing all results reported in our paper [A Deep Learning Method for Comparing Bayesian Hierarchical Models](https://arxiv.org/abs/2302.09125). We propose a deep learning method for performing Bayesian model comparison on any set of hierarchical models which can be instantiated as probabilistic programs. The method formulates the problem as data compression (i.e., embedding hierarchical data sets into informative summary vectors) and probabilistic classification (i.e., assigning posterior probabilities to the summary vectors). 
 
-![](hierarchical_BMC.png)
+The details of the method are described in our paper:
+
+Elsemüller, L., Schnuerch, M., Bürkner, P. C., & Radev, S. T. (2023). 
+A Deep Learning Method for Comparing Bayesian Hierarchical Models
+<em>arXiv preprint arXiv:2301.11873</em>, available for free at: https://arxiv.org/abs/2301.11873.
+
+The code depends on the [BayesFlow](https://github.com/stefanradev93/BayesFlow) library, which implements the neural network architectures and training utilities.
+
+## Cite
+
+Coming soon...
+
+```bibtex
+Coming soon...
+```
 
 ## [notebooks](notebooks)
+
+The experiments are structured as self-contained Jupyter notebooks, which are detailed below.
 
 ### [01_calibration_validation](notebooks/01_calibration_validation)
 
@@ -29,8 +46,16 @@ Code for reproducing the application study in which two variants of the drift di
 - [04_validate_networks](notebooks/03_levy_flight_application/04_validate_networks.ipynb): Validate the trained networks on new simulated data sets.
 - [05_apply_networks](notebooks/03_levy_flight_application/05_apply_networks.ipynb): Apply the trained networks to the empirical data set.
 
-Here, we reanalyzed data from "Jumping to Conclusion? A Lévy Flight Model of Decision Making" by Eva Marie Wieschen, Andreas Voss and Stefan T. Radev. The data set can be requested from the authors of the original study.
+Here, we re-analyzed data from [Jumping to Conclusion? A Lévy Flight Model of Decision Making](https://www.tqmp.org/RegularArticles/vol16-2/p120) by Eva Marie Wieschen, Andreas Voss, and Stefan T. Radev. The data set can be requested from the authors of the original study.
 
 ## [src](src)
 
 Contains custom [Julia](src/julia) and [Python](src/python) functions that enable the analyses, including our proposed hierarchical neural network architecture.
+
+## Support
+
+This work supported by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under Germany’s Excellence Strategy -– EXC-2181 - 390900948 (the Heidelberg Cluster of Excellence STRUCTURES) and -- EXC-2075 - 390740016 (the Stuttgart Cluster of Excellence SimTech), the Cyber Valley Research Fund (grant number: CyVy-RF-2021-16), and by the research training group "Statistical Modeling in Psychology" (SMiP, also supported by the DFG, German Research Foundation; GRK 2277). 
+
+## License
+
+MIT
