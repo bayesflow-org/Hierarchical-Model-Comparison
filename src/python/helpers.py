@@ -12,59 +12,17 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics._base import _check_pos_label_consistency
 
 
-# Calibration: Hacks for BayesFlow compatibility.
-
-
-# fixed data set sizes
-def n_clust_obs_f_f(n_clusters=50, n_obs=50):
-    """
-    Nasty hack to make compatible with BayesFlow.
-    Defines a fixed number of clusters and observations.
-    """
-
-    K = n_clusters
-    N = n_obs
-    return (K, N)
-
-
-# variable number of observations between data sets
-def n_clust_obs_f_v(n_obs_min, n_obs_max, n_clusters=50):
-    """
-    Nasty hack to make compatible with BayesFlow.
-    Defines a fixed number of clusters and a variable number of observations.
-    """
-
-    K = n_clusters
-    N = np.random.randint(n_obs_min, n_obs_max)
-    return (K, N)
-
-
-# apply nasty hack to validation data generation to work with BayesFlow simulator
-def n_clust_obs_f_v_val(n_obs, n_clusters=50):
-    """
-    Nasty hack to make compatible with BayesFlow.
-    Defines a fixed number of clusters and a number of observations that is iterated through.
-    """
-
-    K = n_clusters
-    N = n_obs
-    return (K, N)
-
-
-# variable data set sizes
-def n_clust_obs_v_v(n_clust_min, n_clust_max, n_obs_min, n_obs_max):
-    """
-    Nasty hack to make compatible with BayesFlow.
-    Defines a variable number of clusters and observations.
-    """
-
-    K = np.random.randint(n_clust_min, n_clust_max)
-    N = np.random.randint(n_obs_min, n_obs_max)
-    return (K, N)
-
-
 # Calibration
+# Variable sample sizes
 
+def variable_n_obs(n_obs_min, n_obs_max):
+    n_obs = np.random.randint(n_obs_min, n_obs_max)
+    return {'n_obs' : n_obs}
+
+def variable_sizes(n_clusters_min, n_clusters_max, n_obs_min, n_obs_max):
+    n_clusters = np.random.randint(n_clusters_min, n_clusters_max)
+    n_obs = np.random.randint(n_obs_min, n_obs_max)
+    return {'n_clusters' : n_clusters, 'n_obs' : n_obs}
 
 # Get calibration curve and ECE
 def calibration_curve_with_ece(
