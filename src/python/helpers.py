@@ -1,4 +1,6 @@
-import os
+import os, sys
+sys.path.append(os.path.abspath(os.path.join('../../../BayesFlow_dev/BayesFlow/')))
+import bayesflow as bf
 import numpy as np
 import pandas as pd
 import tensorflow as tf
@@ -6,6 +8,7 @@ from scipy.stats import truncnorm
 from tensorflow.keras.utils import to_categorical
 from time import perf_counter
 from tqdm.notebook import tqdm
+from functools import partial
 
 from sklearn.utils import column_or_1d, assert_all_finite, check_consistent_length
 from sklearn.metrics import accuracy_score
@@ -233,7 +236,9 @@ def get_bootstrapped_predictions(
 def compute_eces_variable(
     probability_net,
     summary_net,
-    simulator,
+    trainer,
+    m1_simulator,
+    m2_simulator,
     n_val_per_setting,
     n_clust_min,
     n_clust_max,
@@ -251,15 +256,6 @@ def compute_eces_variable(
     - containing the mean (1st list) / sd (2nd list) eces of all possible combinations on L and N.
     """
 
-    def n_clust_obs_f_v_val(l, n):
-        """
-        Nasty hack to make compatible with BayesFlow.
-        Defines a fixed number of clusters and a number of observations that is iterated through.
-        """
-
-        K = l
-        N = n
-        return (K, N)
 
     # Create lists
     eces = []
@@ -281,25 +277,25 @@ def compute_eces_variable(
                 for n in range(
                     n_obs_min, n_obs_max + 1
                 ):  # Loop through nested observations
-                    # Simulate validation data
-                    m_val_sim, _, x_val_sim = simulator(
-                        n_val_per_setting, n_clust_obs_f_v_val(l, n)
-                    )
+                    
+                    # Generate data
+                    meta_simulator = bf.simulation.MultiGenerativeModel(
+                        [m1_simulator, m2_simulator], 
+                        shared_context_gen=partial(variable_sizes, l, l+1, n, n+1)
+                        )
+                    data = trainer.configurator(meta_simulator(n_val_per_setting))
 
                     # Predict model probabilities
-                    m_soft = tf.concat(
+                    m_soft = np.concatenate(
                         [
-                            probability_net.predict(summary_net(x_chunk))["m_probs"][
-                                :, 1
-                            ]
-                            for x_chunk in tf.split(x_val_sim, 20)
-                        ],
-                        axis=0,
-                    ).numpy()
+                            probability_net.posterior_probs(summary_net(x_chunk))[:, 1]
+                            for x_chunk in tf.split(data["summary_conditions"], 20)
+                        ]
+                    )
                     m_hard = (m_soft > 0.5).astype(np.int32)
-                    m_true = m_val_sim[:, 1]
+                    m_true = data["model_indices"][:, 1]
 
-                    # Compute calibration error
+                    # Compute metrics
                     prob_true, prob_pred, ece = calibration_curve_with_ece(
                         m_true, m_soft, n_bins=n_cal_bins
                     )
