@@ -467,7 +467,6 @@ def plot_metric_over_obs_repeated(
     wide_ci,
     n_repetitions,
     metric="ECE",
-    print_accuracy=False,
     n_bins=15,
     show_legend=True,
     save=False,
@@ -484,8 +483,6 @@ def plot_metric_over_obs_repeated(
     metric_medians = np.zeros(n_settings)
     metric_narrow = np.zeros((n_settings, 2))
     metric_wide = np.zeros((n_settings, 2))
-    if print_accuracy:
-        accuracies = []
 
     for n in range(n_settings):
         setting_metrics = []
@@ -508,11 +505,6 @@ def plot_metric_over_obs_repeated(
                 sbc = np.mean(0.5 - np.mean(m_pred[n, i, :, 1]))
                 setting_metrics.append(sbc)
 
-            if print_accuracy:
-                accuracy = accuracy_score(
-                    m_true[n, i, :, 1], (m_pred[n, i, :, 1] > 0.5).astype(np.int32)
-                )
-                accuracies.append(accuracy)
         all_metrics[n, :] = setting_metrics
         metric_medians[n] = np.squeeze(np.quantile(setting_metrics, q=[0.5], axis=0))
         metric_narrow[n] = np.quantile(setting_metrics, q=narrow_ci, axis=0)
@@ -522,10 +514,6 @@ def plot_metric_over_obs_repeated(
         np.quantile(all_metrics.flatten(), q=[0.5], axis=0)
     )  # important: flatten nested list
     print(f"Grand median {metric} = {metric_grand_median}")
-
-    if print_accuracy:
-        acc_median = np.squeeze(np.quantile(accuracies, q=[0.5], axis=0))
-        print(f"Median accuracy = {acc_median}")
 
     # Plot
     # plt.axhline(y=ece_grand_median, linestyle='--', color='darkgrey')
@@ -706,7 +694,7 @@ def plot_metric_marginalized(
         ax.set_ylabel(metric, fontsize=plotting_settings["fontsize_labels"])
     if metric == "SBC":
         ax.set_ylim([-0.1, 0.1])
-        ax.set_ylabel(metric, fontsize=plotting_settings["fontsize_labels"])
+        ax.set_ylabel(r"\mathrm{{SBC}}", fontsize=plotting_settings["fontsize_labels"])
     ax.grid(alpha=0.3)
     if legend:
         ax.legend(fontsize=12)
