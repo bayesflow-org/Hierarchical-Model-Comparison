@@ -466,10 +466,20 @@ def load_simulated_rt_data(folder, indices_filename, datasets_filename):
     # unpack indices
     indices = indices[:, 0, 0, 0] - 1
 
-    # one-hot encode indices
-    indices = to_categorical(indices, num_classes=4)
+    # Transform to new BayesFlow format
+    transformed_datasets = []
 
-    return indices, datasets
+    # Iterate over each unique index in reshaped_indices
+    for index in np.unique(indices):
+        index_datasets = datasets[indices == index]  # Get the datasets corresponding to the current index
+        transformed_datasets.append({'sim_data': index_datasets})
+
+    simulations_dict = {
+        'model_outputs' : transformed_datasets,
+        'model_indices' : [0,1,2,3]
+    }
+
+    return simulations_dict
 
 
 def load_empirical_rt_data(load_dir):
