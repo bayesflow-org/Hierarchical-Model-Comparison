@@ -186,6 +186,7 @@ def perf_tester(
     probability_net,
     summary_net,
     val_data,
+    variable_sizes=False,
     n_bootstrap=100,
     n_cal_bins=15,
     pub_style=False,
@@ -194,12 +195,22 @@ def perf_tester(
     """Helper function to test the performance of the model."""
 
     # Compute model predictions in chunks so GPU memory does not blow-up
-    m_soft = np.concatenate(
-        [
-            probability_net.posterior_probs(summary_net(x_chunk))[:, 1]
-            for x_chunk in tf.split(val_data["summary_conditions"], 20)
-        ]
-    )
+    if variable_sizes: # needs to handle direct_conditions additionally
+        split_direct_conditions = tf.split(val_data["direct_conditions"], 20)
+        preds = []
+        for i, x_chunk in enumerate(tf.split(val_data["summary_conditions"], 20)):
+            embedding = summary_net(x_chunk)
+            inference_net_input = np.concatenate([embedding, split_direct_conditions[i]], axis=1)
+            preds.append(probability_net.posterior_probs(inference_net_input)[:, 1])
+        m_soft = np.concatenate(preds)
+    else: # can directly pass simulated data (summary_conditions)
+        m_soft = np.concatenate(
+            [
+                probability_net.posterior_probs(summary_net(x_chunk))[:, 1]
+                for x_chunk in tf.split(val_data["summary_conditions"], 20)
+            ]
+        )
+
     m_hard = (m_soft > 0.5).astype(np.int32)
     m_true = val_data["model_indices"][:, 1]
 
