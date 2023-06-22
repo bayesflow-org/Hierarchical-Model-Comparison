@@ -4,6 +4,7 @@ import bayesflow as bf
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import copy
 from scipy.stats import truncnorm
 from tensorflow.keras.utils import to_categorical
 from time import perf_counter
@@ -450,7 +451,7 @@ def computation_times(results_list):
 
 
 def load_simulated_rt_data(folder, indices_filename, datasets_filename):
-    """Loads and transforms simulated reaction time data.
+    """Loads and transforms simulated reaction time data to cohere to BayesFlow data formatting.
 
     Parameters
     ----------
@@ -515,7 +516,7 @@ def load_empirical_rt_data(load_dir):
 
 
 def mask_inputs(
-    data_sets,
+    simulations_dict,
     missings_mean,
     missings_sd,
     missing_value=-1,
@@ -526,7 +527,7 @@ def mask_inputs(
 
     Parameters
     ----------
-    data_sets : np.array
+    simulations_dict : np.array
         simulated training data sets
     missings_mean : float
         empirical mean of missings per person
@@ -543,45 +544,48 @@ def mask_inputs(
         simulated training data sets with masked inputs
     """
 
-    data_sets = data_sets.copy()
-    n_data_sets = data_sets.shape[0]
-    n_persons = data_sets.shape[1]
-    n_trials = data_sets.shape[2]
+    masked_dict = copy.deepcopy(simulations_dict)
+    n_models = len(masked_dict['model_outputs'])
+    n_data_sets_per_model = masked_dict['model_outputs'][0]['sim_data'].shape[0]
+    n_persons = masked_dict['model_outputs'][0]['sim_data'].shape[1]
+    n_trials = masked_dict['model_outputs'][0]['sim_data'].shape[2]
 
     # create truncated normal parameterization in accordance with scipy documentation
     a, b = (0 - missings_mean) / missings_sd, (n_trials - missings_mean) / missings_sd
 
-    for d in range(n_data_sets):
-        # draw number of masked values per person from truncated normal distribution
-        masks_per_person = (
-            truncnorm.rvs(a, b, loc=missings_mean, scale=missings_sd, size=n_persons)
-            .round()
-            .astype(int)
-        )
-        # assign the specific trials to be masked within a person
-        mask_positions = [
-            np.random.randint(0, n_trials, size=(n_persons, j))
-            for j in masks_per_person
-        ][0]
-        for j in range(n_persons):
-            data_sets[d, j, :, 1:3][mask_positions[j]] = missing_value
-            if missing_rts_equal_mean:
-                data_sets[d, j, :, 1][mask_positions[j]] = np.mean(
-                    data_sets[d, j, :, 1]
-                )
+    for m in range(n_models):
+        for d in range(n_data_sets_per_model):
+            # draw number of masked values per person from truncated normal distribution
+            masks_per_person = (
+                truncnorm.rvs(a, b, loc=missings_mean, scale=missings_sd, size=n_persons)
+                .round()
+                .astype(int)
+            )
+            # assign the specific trials to be masked within a person
+            mask_positions = [
+                np.random.randint(0, n_trials, size=(n_persons, j))
+                for j in masks_per_person
+            ][0]
+            for j in range(n_persons):
+                masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1:3][mask_positions[j]] = missing_value
+                if missing_rts_equal_mean:
+                    masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1][mask_positions[j]] = np.mean(
+                        masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1]
+                    )
 
     # assert that the average amount of masks per person matches the location of the truncnormal dist
     if insert_additional_missings == False:
-        deviation = abs(
-            (data_sets[:, :, :, :] == missing_value).sum()
-            / (n_data_sets * n_persons * (2 - missing_rts_equal_mean))
-            - missings_mean
-        )
-        assert (
-            deviation < 3
-        ), f"Average amount of masks per person deviates by {deviation} from missings_mean!"
+        for m in range(n_models):
+            deviation = abs(
+                (masked_dict['model_outputs'][m]['sim_data'][:, :, :, :] == missing_value).sum()
+                / (n_data_sets_per_model * n_persons * (2 - missing_rts_equal_mean))
+                - missings_mean
+            )
+            assert (
+                deviation < 3
+            ), f"Average amount of masks per person deviates by {deviation} from missings_mean!"
 
-    return data_sets
+    return masked_dict
 
 
 def join_and_fill_missings(
