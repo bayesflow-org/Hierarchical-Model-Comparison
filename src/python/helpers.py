@@ -330,7 +330,7 @@ def compute_eces_variable(
 
 
 def get_preds_and_bfs(
-    probability_net, summary_net, data, training_time_start, training_time_stop, losses
+    probability_net, summary_net, data, training_time_start, training_time_stop, losses, variable=False
 ):
     """
     Writes model predictions and resulting Bayes Factors for a given
@@ -344,10 +344,22 @@ def get_preds_and_bfs(
 
     # Predict
     inference_time_start = perf_counter()
-    m1_prob = np.array(
-        probability_net.posterior_probs(summary_net(data["X"]))[:, 1],
-        dtype=np.longdouble,
-    )
+    if variable:
+        n_clusters_rep = np.sqrt(data["X"].shape[1] * np.ones((n_datasets, 1)))
+        n_obs_rep = np.sqrt(data["X"].shape[2] * np.ones((n_datasets, 1)))
+        n_rep = np.concatenate((n_clusters_rep, n_obs_rep), axis=-1)
+        split_direct_conditions = tf.split(n_rep, 20)
+        preds = []
+        for i, x_chunk in enumerate(tf.split(data["X"], 20)):
+            embedding = summary_net(x_chunk)
+            inference_net_input = np.concatenate([embedding, split_direct_conditions[i]], axis=1)
+            preds.append(probability_net.posterior_probs(inference_net_input)[:, 1])
+        m1_prob = np.concatenate(preds)
+    else:
+        m1_prob = np.array(
+            probability_net.posterior_probs(summary_net(data["X"]))[:, 1],
+            dtype=np.longdouble,
+        )
     inference_time_stop = perf_counter()
     m0_prob = 1 - m1_prob
     selected_model = m1_prob > 0.5
