@@ -3,8 +3,6 @@ np.set_printoptions(suppress=True)
 from tensorflow.keras.utils import to_categorical
 from scipy import stats
 
-import tensorflow as tf
-
 from .settings import DEFAULT_KEYS
 
 
@@ -104,12 +102,30 @@ class HierarchicalNormalSimulator:
     def generate_batch(self, batch_size, model_index, n_clusters=None, n_obs=None, n_vars=1, **kwargs):
         """ Generates a batch of simulated data sets from a fixed model. """
 
+        variable_clusters = None
+        variable_obs = None
+
+        # If variable clusters and/or obs are provided: Encode information for inference network in n_rep
         if n_clusters is None:
+            variable_clusters = True
             n_clusters = kwargs.get('sim_args')['n_clusters']
+            n_clusters_rep = np.sqrt(n_clusters * np.ones((batch_size, 1)))
 
         if n_obs is None:
+            variable_obs = True
             n_obs = kwargs.get('sim_args')['n_obs']
+            n_obs_rep = np.sqrt(n_obs * np.ones((batch_size, 1)))
 
+        if variable_clusters and variable_obs:
+            n_rep = np.concatenate((n_clusters_rep, n_obs_rep), axis=-1)
+        elif variable_clusters:
+            n_rep = n_clusters_rep
+        elif variable_obs:
+            n_rep = n_obs_rep
+        else:
+            n_rep = None
+
+        # Generate data
         X_gen = np.zeros((batch_size, n_clusters, n_obs, n_vars), dtype=np.float32)
 
         for b in range(batch_size):
@@ -117,6 +133,7 @@ class HierarchicalNormalSimulator:
 
         out_dict = {
             DEFAULT_KEYS["sim_data"]: X_gen,
+            DEFAULT_KEYS["sim_non_batchable_context"]: n_rep,
         }
 
         return out_dict
