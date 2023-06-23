@@ -563,6 +563,7 @@ def plot_metric_over_obs_repeated(
             fontsize=plotting_settings["fontsize_labels"],
         )
     if metric == "Accuracy":
+        ax.set_ylim([0.5, 1])
         ax.set_ylabel(metric, fontsize=plotting_settings["fontsize_labels"])
     if metric == "SBC":
         ax.set_ylim([-0.1, 0.1])
@@ -696,16 +697,17 @@ def plot_metric_marginalized(
     ax.set_xlim([n_min, n_max])
     ax.set_xlabel(xlabel, fontsize=plotting_settings["fontsize_labels"])
     if metric == "ECE":
-        # ax.set_ylim([0, 0.1])
+        ax.set_ylim([0, 0.1])
         ax.set_ylabel(
             r"$\widehat{{\mathrm{{ECE}}}}$",
             fontsize=plotting_settings["fontsize_labels"],
         )
     if metric == "Accuracy":
+        ax.set_ylim([0.5, 1])
         ax.set_ylabel(metric, fontsize=plotting_settings["fontsize_labels"])
     if metric == "SBC":
         ax.set_ylim([-0.1, 0.1])
-        ax.set_ylabel(r"\mathrm{{SBC}}", fontsize=plotting_settings["fontsize_labels"])
+        ax.set_ylabel(metric, fontsize=plotting_settings["fontsize_labels"])
     ax.grid(alpha=0.3)
     if legend:
         ax.legend(fontsize=12)

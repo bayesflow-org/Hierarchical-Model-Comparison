@@ -287,12 +287,13 @@ def compute_eces_variable(
                     data = trainer.configurator(meta_simulator(n_val_per_setting))
 
                     # Predict model probabilities
-                    m_soft = np.concatenate(
-                        [
-                            probability_net.posterior_probs(summary_net(x_chunk))[:, 1]
-                            for x_chunk in tf.split(data["summary_conditions"], 20)
-                        ]
-                    )
+                    split_direct_conditions = tf.split(data["direct_conditions"], 20)
+                    preds = []
+                    for i, x_chunk in enumerate(tf.split(data["summary_conditions"], 20)):
+                        embedding = summary_net(x_chunk)
+                        inference_net_input = np.concatenate([embedding, split_direct_conditions[i]], axis=1)
+                        preds.append(probability_net.posterior_probs(inference_net_input)[:, 1])
+                    m_soft = np.concatenate(preds)
                     m_hard = (m_soft > 0.5).astype(np.int32)
                     m_true = data["model_indices"][:, 1]
 
