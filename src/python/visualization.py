@@ -595,7 +595,7 @@ def plot_eces_variable(
     """
 
     # Prepare objects
-    f = plt.figure(figsize=(7, 7))
+    f = plt.figure(figsize=(6, 6))
     ax = plt.axes(projection="3d")
 
     n_clust_points = np.arange(n_clust_min, n_clust_max + 1)
@@ -618,7 +618,10 @@ def plot_eces_variable(
     ax.set_ylabel(
         "Number of observations ($N_m$)", rotation=35
     )  # not parallel to axis with automatic rotation
-    ax.set_zlabel(zlabel)
+    ax.set_zlabel(zlabel, rotation=90)
+    ax.set_box_aspect(aspect=None, zoom=0.88)
+
+    f.subplots_adjust(left=-0.51) 
 
     print(f"Median ECE = {np.squeeze(np.quantile(eces, q=[0.5], axis=0))}")
 
@@ -712,7 +715,7 @@ def plot_metric_marginalized(
     if legend:
         ax.legend(fontsize=12)
     if save == True:
-        f.savefig(f"{metric}_variable_observations.pdf", dpi=300, bbox_inches="tight")
+        f.savefig(f"{metric}_variable_sizes.pdf", dpi=300, bbox_inches="tight")
 
 
 # Bridge sampling comparison: Plot approximations
