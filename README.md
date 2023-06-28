@@ -15,8 +15,6 @@ The code depends on the [BayesFlow](https://github.com/stefanradev93/BayesFlow) 
 
 ## Cite
 
-Coming soon...
-
 ```bibtex
 @article{elsemuller2023deep,
   title={A deep learning method for comparing bayesian hierarchical models},
