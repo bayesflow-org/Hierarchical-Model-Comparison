@@ -1,4 +1,4 @@
-# Deep Hierarchical Model Comparison
+# Hierarchical Model Comparison
 
 
 <img src="img/hierarchical_BMC.png" width=80% height=80%>
@@ -15,10 +15,13 @@ The code depends on the [BayesFlow](https://github.com/stefanradev93/BayesFlow) 
 
 ## Cite
 
-Coming soon...
-
 ```bibtex
-Coming soon...
+@article{elsemuller2023deep,
+  title={A deep learning method for comparing bayesian hierarchical models},
+  author={Elsem{\"u}ller, Lasse and Schnuerch, Martin and B{\"u}rkner, Paul-Christian and Radev, Stefan T},
+  journal={arXiv preprint arXiv:2301.11873},
+  year={2023}
+}
 ```
 
 ## [notebooks](notebooks)
