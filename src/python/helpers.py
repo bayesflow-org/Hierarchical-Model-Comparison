@@ -408,13 +408,11 @@ def get_preds_and_bfs(
     return df
 
 
-def log_with_inf_noise_addition(x):
+def log_with_inf_noise_addition(x, noise=0.000000001):
     """
     Adjusts the model probabilities leading to Inf values by a minimal amount of noise,
     recomputes the Bayes factors and then computes the log of the given array.
     """
-
-    noise = 0.000000001
 
     x_copy = x.copy()
     for i in range(x.shape[0]):
