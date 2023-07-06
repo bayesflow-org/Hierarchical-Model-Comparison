@@ -1,13 +1,4 @@
-# Network settings
-
-sum_config = {
-    "units": 128,
-    "activation": "relu",
-    "kernel_initializer": "glorot_uniform",
-}
-
-
-# DEPRECATED: Network settings for validation experiments
+# Network settings for validation experiment 1
 summary_meta_validation = {
     "level_1": {
         "inv_inner": {
@@ -65,6 +56,38 @@ probability_meta_validation = {
     "n_dense": 2,
     "n_models": 2,
 }
+
+
+# Network settings for validation experiment 2
+summary_meta_validation_2 = {
+    "level_1": {
+        "dense_s1_args": dict(
+                units=8, activation="elu", kernel_initializer="glorot_normal"
+            ),
+        "dense_s2_args": dict(
+                units=32, activation="elu", kernel_initializer="glorot_normal"
+            ),
+        "dense_s3_args": dict(
+                units=32, activation="elu", kernel_initializer="glorot_normal"
+            )
+    }, 
+    "level_2": {
+        "dense_s1_args": dict(
+                units=64, activation="elu", kernel_initializer="glorot_normal"
+            ),
+        "dense_s2_args": dict(
+                units=64, activation="elu", kernel_initializer="glorot_normal"
+            ),
+        "dense_s3_args": dict(
+                units=64, activation="elu", kernel_initializer="glorot_normal"
+            )
+    }
+}
+        
+probability_meta_validation_2 = {
+    "dense_args": dict(units=128, activation="elu", kernel_initializer="glorot_normal")
+}
+
 
 # Network settings for levy flight application
 summary_meta_diffusion = {
