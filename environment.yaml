@@ -1,8 +1,8 @@
 # run: conda env create --file environment.yaml
 
-name: jana
+name: hier_m_c
 dependencies:
-  - python==3.11
+  - python==3.10
   - pip
   - pip:
     - .[docs]
