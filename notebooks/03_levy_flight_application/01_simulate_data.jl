@@ -13,8 +13,6 @@ include("$source_path/02_diffusion.jl")
 include("$source_path/03_experiment.jl")
 include("$source_path/04_datasets.jl")
 
-# A convenient alternative to the simulator notebook
-
 pickle = pyimport("pickle")
 goals = ["pretrain", "finetune", "validate", "test"]
 n_clusters = 40

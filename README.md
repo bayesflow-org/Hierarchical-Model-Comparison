@@ -43,7 +43,7 @@ Code for reproducing the calibration experiments of validation study 1 that are 
 ### [03_levy_flight_application](notebooks/03_levy_flight_application)
 
 Code for reproducing the application study in which the drift diffusion model and the Lévy flight model are compared with and without inter-trial variability parameters. Consists of five steps:
-- [01_simulator](notebooks/03_levy_flight_application/01_simulator.ipynb): Simulate training and validation data.
+- [01_simulate_data](notebooks/03_levy_flight_application/01_simulate_data.jl): Simulate training and validation data.
 - [02_pretrain_networks](notebooks/03_levy_flight_application/02_pretrain_networks.ipynb): Pretrain the network on simulated data with a reduced amount of trials per participant.
 - [03_finetune_networks](notebooks/03_levy_flight_application/03_finetune_networks.ipynb): Fine-tune the network on simulated data that contains the same amount of trials per participant as the empirical data.
 - [04_validate_networks](notebooks/03_levy_flight_application/04_validate_networks.ipynb): Validate the trained networks on new simulated data sets.
