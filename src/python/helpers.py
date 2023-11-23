@@ -5,12 +5,12 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import copy
+import warnings
 from scipy.stats import truncnorm
 from tensorflow.keras.utils import to_categorical
 from time import perf_counter
 from tqdm.notebook import tqdm
 from functools import partial
-
 from sklearn.utils import column_or_1d, assert_all_finite, check_consistent_length
 from sklearn.metrics import accuracy_score
 from sklearn.metrics._base import _check_pos_label_consistency
@@ -223,7 +223,7 @@ def get_bootstrapped_predictions(
         b_idx = np.random.choice(np.arange(n_data_sets), size=n_data_sets, replace=True)
         m_soft[i, :, :] = tf.concat(
             [
-                probability_net.predict(summary_net(x_chunk))["m_probs"]
+                probability_net.posterior_probs(summary_net(x_chunk))
                 for x_chunk in tf.split(simulated_data[b_idx], 20)
             ],
             axis=0,
@@ -522,71 +522,94 @@ def mask_inputs(
     missings_sd,
     missing_value=-1,
     missing_rts_equal_mean=True,
+    tolerance=3,
     insert_additional_missings=False,
 ):
     """Masks some training inputs so that training leads to a robust net that can handle missing data
 
     Parameters
     ----------
-    simulations_dict : np.array
-        simulated training data sets
+    simulations_dict : dict
+        simulated training data sets in the BayesFlow format
     missings_mean : float
         empirical mean of missings per person
     missings_sd : float
         empirical sd of missings per person
-    missing_rts_equal_mean : boolean
-        indicates whether missings reaction time data should be imputed with the person mean
-    insert_additional_missings : boolean
+    missing_value : int or float
+        value to be used as a replacement for masked data
+    missing_rts_equal_mean : bool
+        indicates whether missing reaction time data should be imputed with the person mean instead of missing_value
+    tolerance : int
+        Maximum deviation between average amount of masks per person and missings_mean that is tolerated
+    insert_additional_missings : bool
         indicates whether additional missings should be inserted, which results in disabling the faithfulness check
 
     Returns
     -------
-    data_sets : np.array
+    data_sets : dict
         simulated training data sets with masked inputs
     """
 
     masked_dict = copy.deepcopy(simulations_dict)
     n_models = len(masked_dict['model_outputs'])
-    n_data_sets_per_model = masked_dict['model_outputs'][0]['sim_data'].shape[0]
     n_persons = masked_dict['model_outputs'][0]['sim_data'].shape[1]
     n_trials = masked_dict['model_outputs'][0]['sim_data'].shape[2]
 
-    # create truncated normal parameterization in accordance with scipy documentation
+    # Create truncated normal parameterization in accordance with scipy documentation
     a, b = (0 - missings_mean) / missings_sd, (n_trials - missings_mean) / missings_sd
 
+    total_masks_per_person = []
+
     for m in range(n_models):
+        n_data_sets_per_model = masked_dict['model_outputs'][m]['sim_data'].shape[0]
         for d in range(n_data_sets_per_model):
-            # draw number of masked values per person from truncated normal distribution
+            # Draw number of masked values per person from truncated normal distribution
             masks_per_person = (
                 truncnorm.rvs(a, b, loc=missings_mean, scale=missings_sd, size=n_persons)
                 .round()
                 .astype(int)
             )
-            # assign the specific trials to be masked within a person
+            total_masks_per_person.append(masks_per_person)
+            # Assign the specific trials to be masked within each person
             mask_positions = [
-                np.random.randint(0, n_trials, size=(n_persons, j))
+                np.random.choice(n_trials, size=j, replace=False)
                 for j in masks_per_person
-            ][0]
+            ]
+            # Iterate over each person and mask their trials according to mask_positions
             for j in range(n_persons):
-                masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1:3][mask_positions[j]] = missing_value
-                if missing_rts_equal_mean:
+                if missing_rts_equal_mean: # set rts to person mean and decisions to missing_value
+                    masked_dict['model_outputs'][m]['sim_data'][d, j, :, 2][mask_positions[j]] = missing_value
                     masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1][mask_positions[j]] = np.mean(
                         masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1]
                     )
+                else:  # set rts and decisions to missing_value
+                    masked_dict['model_outputs'][m]['sim_data'][d, j, :, 1:3][mask_positions[j]] = missing_value
 
-    # assert that the average amount of masks per person matches the location of the truncnormal dist
-    if insert_additional_missings == False:
-        for m in range(n_models):
-            deviation = abs(
-                (masked_dict['model_outputs'][m]['sim_data'][:, :, :, :] == missing_value).sum()
-                / (n_data_sets_per_model * n_persons * (2 - missing_rts_equal_mean))
-                - missings_mean
-            )
-            assert (
-                deviation < 3
-            ), f"Average amount of masks per person deviates by {deviation} from missings_mean!"
+    # Calculate the average amount of masks per person across all models and data sets
+    avg_masks_per_person = np.mean(total_masks_per_person)
+
+    # Check if the deviation between average amount of masks and missings_mean is greater than the specified tolerance
+    if not insert_additional_missings:
+        deviation = abs(avg_masks_per_person - missings_mean)
+        if deviation > tolerance:
+            warnings.warn(f"Average amount of masks per person deviates by {deviation} from missings_mean!")
 
     return masked_dict
+
+
+class MaskingConfigurator:
+
+    def __init__(self):
+        """
+        Initializes a MaskingConfigurator instance using the BayesFlow default DefaultModelComparisonConfigurator.
+        """
+        self.default_config = bf.configuration.DefaultModelComparisonConfigurator(num_models=4)
+
+    def __call__(self, forward_dict):
+        """ Masks the simulated data with missing values and configures it for network training. """
+        masked_dict = mask_inputs(forward_dict, missings_mean=28.5, missings_sd=13.5)
+        config = self.default_config(masked_dict)
+        return config
 
 
 def join_and_fill_missings(
@@ -703,18 +726,21 @@ def mean_predictions_noisy_data(
     n_clusters = empirical_data.shape[1]
     n_obs = empirical_data.shape[2]
 
+    # Hack to conform with BayesFlow dictionary format expected by mask_inputs
+    pseudo_empirical_dict = {"model_outputs": [{"sim_data": empirical_data}]}
+
     for r in range(n_runs):
         noisy_data = mask_inputs(
-            empirical_data,
+            pseudo_empirical_dict,
             missings_mean=missings_mean,
             missings_sd=0.0001,
             missing_rts_equal_mean=True,
             insert_additional_missings=True,
-        )
+        )["model_outputs"][0]["sim_data"]  # Second hack to transform back to 4D array
         noise_proportion_run = (noisy_data == -1).sum() / (n_clusters * n_obs)
         noise_proportion.append(noise_proportion_run)
-        preds = probability_net.predict(summary_net(noisy_data))
-        probs.append(preds["m_probs"])
+        preds = probability_net.posterior_probs(summary_net(noisy_data))
+        probs.append(preds)
 
     mean_noise_proportion = np.mean(noise_proportion)
     mean_probs = np.mean(probs, axis=0)
@@ -815,7 +841,7 @@ def inspect_robustness_bootstrap(
             bootstrapped_data = empirical_data[:, b_idx, :, :]
         elif level == "trials":
             bootstrapped_data = empirical_data[:, :, b_idx, :]
-        probs = probability_net.predict(summary_net(bootstrapped_data))["m_probs"]
+        probs = probability_net.posterior_probs(summary_net(bootstrapped_data))
         bootstrapped_probs.append(probs)
 
     bootstrapped_probs = np.asarray(bootstrapped_probs)[:, 0, :]
@@ -854,7 +880,7 @@ def inspect_robustness_lopo(
 
     for b in range(n_participants):
         cropped_data = np.delete(empirical_data, b, axis=1)
-        probs = probability_net.predict(summary_net(cropped_data))["m_probs"]
+        probs = probability_net.posterior_probs(summary_net(cropped_data))
         lopo_probs.append(probs)
         if print_probs:
             print_probs(f"Participant = {b+1} / Predictions  = {probs}")

@@ -11,6 +11,7 @@ notebooks/Graphics_Viz.ipynb
 
 # Tensorflow checkpoints
 ckpt* 
+checkpoints
 
 # Folders
 data

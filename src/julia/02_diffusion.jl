@@ -17,7 +17,7 @@ function generate_levy_trial(a_l::Float64, zr_l::Float64, v_l::Float64, t0_l::Fl
 
     # Simulate single DM path
     while (x < a_l) && (x > 0) && (n_steps < tol) # as long as no decision boundary or the max. amount of steps is reached
-        x += dt*v_l + rho * rand(AlphaStable(α=alpha_l, β=0.0, scale=1.0, location=0.0))
+        x += dt*v_l + rho * rand(AlphaStable(α=alpha_l, β=0.0, scale=1.0 / sqrt(2), location=0.0))
         n_steps += 1
     end
     

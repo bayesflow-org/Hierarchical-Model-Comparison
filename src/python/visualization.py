@@ -933,7 +933,7 @@ def plot_model_posteriors(
 
 
 def plot_noise_robustness(
-    noise_proportions, mean_probs, mean_variabilities, labels, save=False
+    noise_proportions, mean_probs, mean_variabilities, labels, legend_loc=None, save=False
 ):
     """Plots the robustness of the model to additional noise (missing values).
 
@@ -964,7 +964,7 @@ def plot_noise_robustness(
         )
 
     ax.legend(
-        labels, fontsize=plotting_settings["fontsize_labels"]
+        labels, fontsize=plotting_settings["fontsize_labels"], loc=legend_loc
     )  # between loops to correctly display lines and not shaded area
 
     for m in range(n_models):
@@ -976,6 +976,7 @@ def plot_noise_robustness(
             alpha=0.2,
         )
 
+    ax.set_ylim([0, 1])
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     ax.grid(alpha=0.3)

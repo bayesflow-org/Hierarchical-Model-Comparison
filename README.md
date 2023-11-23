@@ -3,7 +3,7 @@
 
 <img src="img/hierarchical_BMC.png" width=80% height=80%>
 
-This repository contains the code for running the experiments and reproducing all results reported in our paper [A Deep Learning Method for Comparing Bayesian Hierarchical Models](https://arxiv.org/abs/2302.09125). We propose a deep learning method for performing Bayesian model comparison on any set of hierarchical models which can be instantiated as probabilistic programs. The method formulates the problem as data compression (i.e., embedding hierarchical data sets into informative summary vectors) and probabilistic classification (i.e., assigning posterior probabilities to the summary vectors). 
+This repository contains the code for running the experiments and reproducing all results reported in our paper [A Deep Learning Method for Comparing Bayesian Hierarchical Models](https://arxiv.org/abs/2301.11873). We propose a deep learning method for performing Bayesian model comparison on any set of hierarchical models which can be instantiated as probabilistic programs. The method formulates the problem as data compression (i.e., embedding hierarchical data sets into informative summary vectors) and probabilistic classification (i.e., assigning posterior probabilities to the summary vectors). 
 
 The details of the method are described in our paper:
 
@@ -42,7 +42,7 @@ Code for reproducing the calibration experiments of validation study 1 that are 
 
 ### [03_levy_flight_application](notebooks/03_levy_flight_application)
 
-Code for reproducing the application study in which two variants of the drift diffusion model are compared to two variants of a Lévy flight model. Consists of five steps:
+Code for reproducing the application study in which the drift diffusion model and the Lévy flight model are compared with and without inter-trial variability parameters. Consists of five steps:
 - [01_simulator](notebooks/03_levy_flight_application/01_simulator.ipynb): Simulate training and validation data.
 - [02_pretrain_networks](notebooks/03_levy_flight_application/02_pretrain_networks.ipynb): Pretrain the network on simulated data with a reduced amount of trials per participant.
 - [03_finetune_networks](notebooks/03_levy_flight_application/03_finetune_networks.ipynb): Fine-tune the network on simulated data that contains the same amount of trials per participant as the empirical data.
@@ -53,11 +53,11 @@ Here, we re-analyzed data from [Jumping to Conclusion? A Lévy Flight Model of D
 
 ## [src](src)
 
-Contains custom [Julia](src/julia) and [Python](src/python) functions that enable the analyses, including our proposed hierarchical neural network architecture.
+Contains custom [Julia](src/julia) and [Python](src/python) functions that enable the analyses, including the original implementation of our proposed hierarchical neural network architecture (all experiments now use our implementation in the BayesFlow library).
 
 ## Support
 
-This work supported by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under Germany’s Excellence Strategy -– EXC-2181 - 390900948 (the Heidelberg Cluster of Excellence STRUCTURES) and -- EXC-2075 - 390740016 (the Stuttgart Cluster of Excellence SimTech), the Cyber Valley Research Fund (grant number: CyVy-RF-2021-16), and by the research training group "Statistical Modeling in Psychology" (SMiP, also supported by the DFG, German Research Foundation; GRK 2277). 
+This work was supported by the Deutsche Forschungsgemeinschaft (DFG, German Research Foundation) under Germany’s Excellence Strategy -– EXC-2181 - 390900948 (the Heidelberg Cluster of Excellence STRUCTURES) and -- EXC-2075 - 390740016 (the Stuttgart Cluster of Excellence SimTech), and by the research training group "Statistical Modeling in Psychology" (SMiP, also supported by the DFG; GRK 2277). 
 
 ## License
 

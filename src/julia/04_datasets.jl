@@ -22,7 +22,11 @@ function generate_levy_dataset_by_model(model::Int, n_clusters::Int64, n_trials:
 end
 
 
-"Generates a batch of datasets simulated from a given model."
+"""
+Generates a batch of datasets simulated from a given model.
+Uses Threads.@threads for parallelization - assure that number of threads Julia uses is set accordingly (e.g., in the VSCode Julia extension).
+Check with println(Threads.nthreads()) or println(ENV["JULIA_NUM_THREADS"]).
+"""
 function generate_levy_batch(model::Int64, batch_size::Int64, n_clusters::Int64, n_trials::Int64)::Tuple{Vector{Int64}, Array{Float64, 4}}
 
     data = fill(0.0, (batch_size, n_clusters, n_trials, 3))
@@ -33,4 +37,29 @@ function generate_levy_batch(model::Int64, batch_size::Int64, n_clusters::Int64,
     end
 
     return index_list, data
+end
+
+
+"""
+Generates a batch of datasets simulated from all models, in BayesFlow dict format. 
+Uses a flat model prior (equal number of data sets per model).
+"""
+function multi_generative_model(num_models::Int64, batch_size::Int64, n_clusters::Int64, n_trials::Int64)
+    # Check if batch_size is divisible by num_models
+    if batch_size % num_models != 0
+        throw(ArgumentError("batch_size must be divisible by num_models"))
+    end
+
+    sims_per_model = Int(batch_size / num_models)
+    out_dict = Dict("model_outputs" => [], "model_indices" => [])
+
+    for m_idx in 1:num_models
+        index_list, data = generate_levy_batch(m_idx, sims_per_model, n_clusters, n_trials)
+        m_idx_outputs = Dict("sim_data" => data)
+
+        push!(out_dict["model_outputs"], m_idx_outputs)
+        push!(out_dict["model_indices"], m_idx - 1)
+    end
+
+    return out_dict
 end
